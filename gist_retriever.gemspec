@@ -14,6 +14,4 @@ Gem::Specification.new do |gem|
   gem.name          = "gist_retriever"
   gem.require_paths = ["lib"]
   gem.version       = GistRetriever::VERSION
-
-  gem.add_development_dependency "rspec"
 end
