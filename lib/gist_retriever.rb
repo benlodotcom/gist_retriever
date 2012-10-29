@@ -16,6 +16,20 @@ module GistRetriever
   		    #embed code)
 		  self.gist_regex = /<script src=\"(http|https):\/\/gist.github.com\/(\d+).js(\?file=(\S+))?\"(\s*lang=\"(.+)\")?>\s*<\/script>/
 
+      def fetch(text, &block)
+          
+          detect_gists(text, false, &block)
+          
+      end
+
+      def fetch_and_replace(text, &block)
+          
+          detect_gists(text, true, &block)
+          
+      end
+
+      private
+
   		def get_gist_url(gist_base_url, gist_id)
   		  #complete gist url
   		  "#{gist_base_url}#{gist_id}"
@@ -35,22 +49,27 @@ module GistRetriever
   			URI.parse(gist_raw_url).read
   		end
 
-  		def go_fetch(text, &block)
-  		    
-  		    text.gsub(self.class.gist_regex) do
-  		    	gist_id = $2
-  		    	gist_file = $4
-  		    	gist_lang = $6 || self.class.default_language
-  		    	#complete gist url
-  		    	gist_url = get_gist_url(self.class.gist_base_url, gist_id)
-  		    	#url to the text version of the gist (two versions depending if we show only one file or all the gist)
-  		    	gist_raw_url = get_gist_raw_url(self.class.gist_base_url, gist_id, gist_file)
-  		    	#get gist raw code from github
-  		    	gist_code = get_gist_code(gist_raw_url)
+      def detect_gists(text, replace, &block)
 
-  		    	yield gist_code, gist_lang, gist_id, gist_file, gist_url, gist_raw_url
-  		    end
-  		end
+        detected_action = Proc.new{
+          gist_id = $2
+          gist_file = $4
+          gist_lang = $6 || self.class.default_language
+          #complete gist url
+          gist_url = get_gist_url(self.class.gist_base_url, gist_id)
+          #url to the text version of the gist (two versions depending if we show only one file or all the gist)
+          gist_raw_url = get_gist_raw_url(self.class.gist_base_url, gist_id, gist_file)
+          #get gist raw code from github
+          gist_code = get_gist_code(gist_raw_url)
+
+           yield gist_code, gist_lang, gist_id, gist_file, gist_url, gist_raw_url
+        }
+
+        method = replace ? "gsub" : "match"
+
+        text.send(method, self.class.gist_regex, &detected_action)
+
+      end
 
 
 	end
